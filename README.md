@@ -59,3 +59,66 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Routes & Permissions (quick reference)
+
+- `GET /projects` (public index)
+- `projects` resource (other actions protected by `auth`) — policy `ProjectPolicy` controls create/update/delete/assign
+	- `ProjectPolicy::create()` => only admins (`is_admin = true`) can create projects
+	- `update/delete/assign/unassign` => only admins
+	- `view` => admins, assigned students, or authenticated users (configured in `app/Policies/ProjectPolicy.php`)
+
+- `GET /students` (public index)
+- other `students` actions (`show`, `create`, `store`, `edit`, etc.) are protected by `auth`.
+	- `students.show` additionally restricts viewing detailed student page to the student-owner (`user.student_id`) or admin (see `app/Http/Controllers/StudentController::show`).
+
+## Demo users (for manual testing)
+
+You can seed demo users with:
+
+```bash
+php artisan db:seed
+```
+
+Credentials included by the seeder:
+
+- Admin: `admin@example.com` / `SuperSecret123!`
+- Demo user: `demo@example.com` / `password`
+
+The `DatabaseSeeder` calls `DemoUserSeeder` which creates both users.
+
+## Laravel Dusk (UI tests)
+
+To add and run browser tests using Laravel Dusk on your machine:
+
+1. Install the package:
+
+```powershell
+composer require --dev laravel/dusk
+```
+
+2. Install the Dusk scaffolding:
+
+```powershell
+php artisan dusk:install
+```
+
+3. (Optional) Ensure Chromedriver is compatible with your Chrome:
+
+```powershell
+php artisan dusk:chrome-driver
+```
+
+4. Run Dusk tests (headless optional):
+
+```powershell
+php artisan dusk
+# or headless
+php artisan dusk -- --headless
+```
+
+Notes:
+- Running Dusk requires Chrome/Chromium on the machine and the appropriate Chromedriver. On Windows you may need to allow the tool to download executables.
+- I added a sample `tests/Browser/ProjectsTest.php` and a `tests/DuskTestCase.php` base class to this repo; after you install Dusk locally run `php artisan dusk:install` to wire everything.
+
+

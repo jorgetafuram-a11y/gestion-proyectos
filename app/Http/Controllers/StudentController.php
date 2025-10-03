@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Student;
+use Illuminate\Support\Facades\Auth;
 
 class StudentController extends Controller
 {
@@ -12,7 +14,8 @@ class StudentController extends Controller
      */
     public function index()
     {
-        //
+        $students = Student::paginate(20);
+        return view('students.index', compact('students'));
     }
 
     /**
@@ -20,7 +23,8 @@ class StudentController extends Controller
      */
     public function create()
     {
-        //
+        // Show a simple create form for students. Only authenticated users can access this because route is protected.
+        return view('students.create');
     }
 
     /**
@@ -28,7 +32,15 @@ class StudentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $this->validate($request, [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:students,email',
+            'program' => 'nullable|string|max:255',
+        ]);
+
+        $student = Student::create($request->only(['name','email','program']));
+
+        return redirect()->route('students.show', $student)->with('success','Estudiante creado');
     }
 
     /**
@@ -36,7 +48,12 @@ class StudentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $student = Student::with('projects')->findOrFail($id);
+        // only allow owner or admin to view detailed assignments
+        if(!Auth::check() || (Auth::user()->student_id !== (int)$id && !Auth::user()->is_admin)){
+            abort(403);
+        }
+        return view('students.show', compact('student'));
     }
 
     /**
