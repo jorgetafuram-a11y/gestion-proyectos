@@ -107,6 +107,25 @@
     <div id="global-toast-container"></div>
   </div>
 
+  <!-- Global confirmation modal for destructive actions -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmModalLabel">Confirmar acción</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          ¿Estás seguro que deseas continuar? Esta acción no se puede deshacer.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" id="confirmModalBtn" class="btn btn-danger">Sí, eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // If there are session messages, render them as toasts for a modern UX
     document.addEventListener('DOMContentLoaded', function(){
@@ -154,3 +173,64 @@
   @stack('scripts')
 </body>
 </html>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // Handle ajax delete forms
+  var confirmModalEl = document.getElementById('confirmModal');
+  var confirmModal = confirmModalEl ? new bootstrap.Modal(confirmModalEl) : null;
+  var confirmBtn = document.getElementById('confirmModalBtn');
+
+  document.querySelectorAll('form.ajax-delete').forEach(function(form){
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      // show modal
+      if(confirmModal){
+        confirmModal.show();
+        var onConfirm = function(){
+          confirmBtn.disabled = true;
+          confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Eliminando...';
+          // perform AJAX request
+          fetch(form.action, { method: 'POST', headers: { 'X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value }, body: new URLSearchParams([['_method','DELETE']]) })
+            .then(function(r){
+              confirmBtn.disabled = false;
+              confirmBtn.innerHTML = 'Sí, eliminar';
+              confirmModal.hide();
+              if(r.ok){
+                // animate removal if row present
+                var row = form.closest('tr');
+                if(row){ row.style.transition = 'opacity 0.4s ease'; row.style.opacity = '0'; setTimeout(function(){ row.remove(); }, 400); }
+                showToast('success','Eliminado correctamente');
+                // if on show page, redirect to index
+                if(window.location.pathname.indexOf('/projects/')===0 && document.querySelectorAll('table').length===0){ window.location = '{{ route("projects.index") }}'; }
+              } else {
+                showToast('danger','Error al eliminar');
+              }
+            }).catch(function(){ confirmBtn.disabled = false; confirmBtn.innerHTML = 'Sí, eliminar'; confirmModal.hide(); showToast('danger','Error de red'); });
+          confirmBtn.removeEventListener('click', onConfirm);
+        };
+        confirmBtn.addEventListener('click', onConfirm);
+      } else {
+        // fallback to native confirm
+        if(confirm('¿Eliminar?')) form.submit();
+      }
+    });
+  });
+
+  // helper to show toast
+  function showToast(type, message){
+    try{
+      var container = document.getElementById('global-toast-container');
+      var t = document.createElement('div');
+      t.className = 'toast align-items-center text-bg-'+(type==='success'?'success':'danger')+' border-0';
+      t.setAttribute('role','alert'); t.setAttribute('aria-live','assertive'); t.setAttribute('aria-atomic','true');
+      t.innerHTML = '<div class="d-flex"><div class="toast-body">'+message+'</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>';
+      container.appendChild(t);
+      var bsToast = new bootstrap.Toast(t, { delay: 3000 }); bsToast.show();
+      t.addEventListener('hidden.bs.toast', function(){ t.remove(); });
+    }catch(e){ console.warn(e); }
+  }
+});
+</script>
+@endpush

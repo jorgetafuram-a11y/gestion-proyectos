@@ -58,6 +58,11 @@ class ProjectController extends Controller
     {
         $this->authorize('delete', $project);
         $project->delete();
+        // If the request expects JSON (AJAX), return a JSON response so the frontend
+        // AJAX handler can smoothly update the UI. Otherwise, redirect back with a flash.
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json(['message' => 'Proyecto eliminado'], 200);
+        }
         return back()->with('success','Proyecto eliminado');
     }
 

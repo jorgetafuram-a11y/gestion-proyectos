@@ -27,7 +27,7 @@
           <a class="btn btn-sm btn-success" href="{{ route('projects.assign.form', $p) }}">Asignar estudiantes</a>
           @auth
             @if(Auth::user()->is_admin)
-              <form action="{{ route('projects.destroy', $p) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Eliminar proyecto?');">
+              <form class="ajax-delete" action="{{ route('projects.destroy', $p) }}" method="POST" style="display:inline-block;">
                 @csrf
                 @method('DELETE')
                 <button class="btn btn-sm btn-danger">Eliminar</button>

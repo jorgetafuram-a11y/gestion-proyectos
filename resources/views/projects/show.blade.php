@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <a href="{{ route('projects.index') }}">Volver</a>
   @auth
     @if(Auth::user()->is_admin)
-      <form action="{{ route('projects.destroy', $project) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Eliminar proyecto?');">
+      <form class="ajax-delete" action="{{ route('projects.destroy', $project) }}" method="POST" style="display:inline-block;">
         @csrf
         @method('DELETE')
         <button class="btn btn-danger">Eliminar proyecto</button>
